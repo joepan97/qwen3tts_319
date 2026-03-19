@@ -1,6 +1,6 @@
 # Qwen3-TTS Local Toolkit
 
-A local Qwen3-TTS toolkit for macOS with:
+A local Qwen3-TTS toolkit for **macOS and Linux** with:
 
 - simple CLI generation
 - local WebUI
@@ -11,7 +11,7 @@ A local Qwen3-TTS toolkit for macOS with:
 - Chinese tone instruction field
 - tone preset dropdown in the WebUI
 
-This setup was built and tested on Apple Silicon macOS and is designed for local personal use.
+This project is designed for local personal use and CPU-based testing.
 
 ## Features
 
@@ -23,11 +23,13 @@ This setup was built and tested on Apple Silicon macOS and is designed for local
 - **Chinese tone instructions**: natural-language instruction field for emotion / tone guidance
 - **Tone presets**: Natural / Gentle / Angry / Sad / Cheerful / Serious / Broadcast / Story
 - **Path helpers**: latest file path, output folder path, open folder, reveal latest file
-- **Error messages**: more readable UI error explanations for common failures
+- **Readable errors**: more understandable UI error explanations for common failures
+- **Cross-platform launchers**: start scripts work on macOS and Linux
 
 ## Tested Environment
 
 - macOS (Apple Silicon)
+- Linux-compatible launch flow prepared
 - Python 3.11
 - `qwen-tts`
 - model: `Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`
@@ -56,26 +58,37 @@ qwen3-tts/
 
 ## Installation
 
-### 1. Create and activate a Python 3.11 virtual environment
+### Python environment
 
 ```bash
 cd qwen3-tts
 python3.11 -m venv .venv
 source .venv/bin/activate
+python -m pip install -U pip setuptools wheel
 ```
 
-### 2. Install Python dependencies
+### Python packages
 
 ```bash
-python -m pip install -U pip setuptools wheel
 python -m pip install qwen-tts fastapi uvicorn gradio opencc-python-reimplemented soundfile
 ```
 
-### 3. Install system dependencies
+## System dependencies
+
+### macOS
 
 ```bash
 brew install ffmpeg sox
 ```
+
+### Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv ffmpeg sox
+```
+
+If your distro uses a different package name for Python 3.11, install the matching version available on your system.
 
 ## Usage
 
@@ -185,9 +198,28 @@ Example request:
   "export_mp3": true,
   "preset": "balanced",
   "auto_t2s": true,
-  "speed": 1.0
+  "speed": 1.0,
+  "instruct": "請用溫柔、平靜的口氣來讀。"
 }
 ```
+
+## Linux Notes
+
+This project no longer depends on:
+
+- hardcoded Homebrew-only `ffmpeg` paths
+- macOS-only `open` commands in core logic
+- absolute macOS-only startup paths
+
+Behavior now is:
+
+- `ffmpeg` is resolved from `PATH` (or `QWEN_TTS_FFMPEG` if set)
+- folder/file opening uses:
+  - `open` on macOS
+  - `xdg-open` on Linux when available
+- startup scripts resolve their own directory dynamically
+
+If no GUI opener exists on Linux, the project still works; the UI will return paths even if the system cannot auto-open folders.
 
 ## Notes
 
@@ -199,19 +231,10 @@ Example request:
 ## Common Local Commands
 
 ```bash
-# activate env
 source .venv/bin/activate
-
-# run smoke test
 python smoke_test.py
-
-# compare speakers
 python compare_speakers.py
-
-# start UI
 ./start-webui
-
-# start API
 ./start-api
 ```
 

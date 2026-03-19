@@ -136,7 +136,7 @@ def reveal_latest_file():
     if not latest:
         raise gr.Error("目前還沒有生成檔案。")
     latest_path = latest[0]
-    subprocess.run(["open", "-R", latest_path], check=True)
+    open_path(latest_path, reveal=True)
     return latest_path
 
 
@@ -217,4 +217,8 @@ if __name__ == "__main__":
         share=DEFAULT_SHARE,
         inbrowser=False,
         allowed_paths=[str((Path(__file__).resolve().parent / "out").resolve())],
+    )
+
+    )
+/ "out").resolve())],
     )

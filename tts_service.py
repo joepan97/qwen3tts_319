@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import os
+import shutil
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -10,7 +13,7 @@ from serena_tts import synthesize, DEFAULT_LANGUAGE, DEFAULT_MAX_NEW_TOKENS, DEF
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_DIR = BASE_DIR / "out"
-FFMPEG = "/opt/homebrew/bin/ffmpeg"
+FFMPEG = os.environ.get("QWEN_TTS_FFMPEG") or shutil.which("ffmpeg")
 SPEAKERS = ["serena", "vivian", "ono_anna"]
 LANGUAGES = ["Chinese", "English", "Japanese"]
 DEFAULT_PRESET = "balanced"
@@ -20,27 +23,22 @@ _PRESETS: Dict[str, Dict[str, object]] = {
     "balanced": {
         "label": "平衡 / 自然",
         "max_new_tokens": DEFAULT_MAX_NEW_TOKENS,
-        "text_prefix": "",
     },
     "gentle": {
         "label": "溫柔 / 柔和",
         "max_new_tokens": max(DEFAULT_MAX_NEW_TOKENS + 128, 768),
-        "text_prefix": "請用溫柔、自然、放鬆的語氣朗讀：",
     },
     "story": {
         "label": "說故事 / 旁白感",
         "max_new_tokens": max(DEFAULT_MAX_NEW_TOKENS + 192, 896),
-        "text_prefix": "請用有節奏、帶一點故事感的旁白語氣朗讀：",
     },
     "slow_clear": {
         "label": "慢速 / 清楚",
         "max_new_tokens": max(DEFAULT_MAX_NEW_TOKENS + 256, 960),
-        "text_prefix": "請放慢速度、咬字清楚、停頓自然地朗讀：",
     },
     "lively": {
         "label": "活潑 / 聊天感",
         "max_new_tokens": max(DEFAULT_MAX_NEW_TOKENS + 96, 768),
-        "text_prefix": "請用比較活潑、像聊天一樣自然的語氣朗讀：",
     },
 }
 
@@ -58,7 +56,7 @@ def latest_outputs(limit: int = 10):
 
 
 def maybe_make_ogg(wav_path: Path) -> str:
-    if not Path(FFMPEG).exists():
+    if not FFMPEG:
         return "ffmpeg not found; skipped .ogg export"
     ogg_path = wav_path.with_suffix(".ogg")
     subprocess.run(
@@ -71,7 +69,7 @@ def maybe_make_ogg(wav_path: Path) -> str:
 
 
 def maybe_make_mp3(wav_path: Path) -> str:
-    if not Path(FFMPEG).exists():
+    if not FFMPEG:
         return "ffmpeg not found; skipped .mp3 export"
     mp3_path = wav_path.with_suffix(".mp3")
     subprocess.run(
@@ -102,7 +100,7 @@ def maybe_adjust_speed(src_path: Path, speed: float) -> Path:
     speed = float(speed)
     if abs(speed - 1.0) < 1e-6:
         return src_path
-    if not Path(FFMPEG).exists():
+    if not FFMPEG:
         raise RuntimeError("ffmpeg not found; cannot adjust speed")
     dst_path = src_path.with_name(f"{src_path.stem}-x{speed:.2f}{src_path.suffix}")
     subprocess.run(
@@ -116,6 +114,23 @@ def maybe_adjust_speed(src_path: Path, speed: float) -> Path:
 
 def to_simplified_chinese(text: str) -> str:
     return _cc_t2s.convert(text)
+
+
+def open_path(path: str, reveal: bool = False) -> bool:
+    target = str(path)
+    try:
+        if sys.platform == "darwin":
+            cmd = ["open", "-R", target] if reveal else ["open", target]
+            subprocess.run(cmd, check=True)
+            return True
+        if sys.platform.startswith("linux"):
+            if shutil.which("xdg-open"):
+                cmd = ["xdg-open", str(Path(target).parent if reveal else target)]
+                subprocess.run(cmd, check=True)
+                return True
+        return False
+    except Exception:
+        return False
 
 
 def build_prompt_text(text: str, preset: str, auto_t2s: bool, language: str) -> str:
@@ -158,6 +173,7 @@ def generate_tts_file(
         speaker=speaker,
         language=language,
         max_new_tokens=int(max_new_tokens),
+        instruct=(instruct or "").strip() or None,
     )
 
     wav_effective_path = maybe_adjust_speed(wav_path, speed)
@@ -167,7 +183,7 @@ def generate_tts_file(
     if export_ogg:
         try:
             ogg_result = maybe_make_ogg(wav_effective_path)
-            ogg_path = ogg_result if ogg_result.endswith('.ogg') else None
+            ogg_path = ogg_result if ogg_result.endswith(".ogg") else None
         except Exception as e:
             ogg_result = f".ogg 轉檔失敗: {e}"
 
@@ -176,7 +192,7 @@ def generate_tts_file(
     if export_mp3:
         try:
             mp3_result = maybe_make_mp3(wav_effective_path)
-            mp3_path = mp3_result if mp3_result.endswith('.mp3') else None
+            mp3_path = mp3_result if mp3_result.endswith(".mp3") else None
         except Exception as e:
             mp3_result = f".mp3 轉檔失敗: {e}"
 
@@ -192,5 +208,5 @@ def generate_tts_file(
         "max_new_tokens": int(max_new_tokens),
         "auto_t2s": auto_t2s,
         "speed": float(speed),
-        "instruct": (instruct or '').strip(),
+        "instruct": (instruct or "").strip(),
     }
