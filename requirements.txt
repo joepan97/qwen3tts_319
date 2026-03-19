@@ -1,0 +1,7 @@
+qwen-tts
+fastapi
+uvicorn
+gradio
+opencc-python-reimplemented
+soundfile
+torch

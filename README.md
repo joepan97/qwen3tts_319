@@ -1,41 +1,41 @@
-# Qwen3-TTS Local Toolkit
+# Qwen3-TTS 本地工具包
 
-A local Qwen3-TTS toolkit for **macOS and Linux** with:
+這是一個可在 **macOS 與 Linux** 使用的 Qwen3-TTS 本地工具包，提供：
 
-- simple CLI generation
-- local WebUI
-- local HTTP API
-- WAV / OGG / MP3 export
-- speaking speed control
-- Traditional Chinese -> Simplified Chinese conversion for synthesis
-- Chinese tone instruction field
-- tone preset dropdown in the WebUI
+- CLI 指令產生語音
+- 本機 WebUI
+- 本機 HTTP API
+- WAV / OGG / MP3 輸出
+- 語速控制
+- 繁體中文自動轉簡體中文後再合成
+- 中文口氣說明欄位
+- WebUI 口氣選項下拉選單
 
-This project is designed for local personal use and CPU-based testing.
+這個專案主要設計給本地個人使用，以及 CPU 環境下的 Qwen3-TTS 測試與包裝。
 
-## Features
+## 功能特色
 
-- **CLI wrapper**: generate speech from shell with `./serena-tts`
-- **WebUI**: browser-based local interface at `http://127.0.0.1:7860`
-- **API server**: local HTTP endpoint at `http://127.0.0.1:7861`
-- **Formats**: `.wav`, `.ogg`, `.mp3`
-- **Speed control**: `0.5x` to `1.5x`
-- **Chinese tone instructions**: natural-language instruction field for emotion / tone guidance
-- **Tone presets**: Natural / Gentle / Angry / Sad / Cheerful / Serious / Broadcast / Story
-- **Path helpers**: latest file path, output folder path, open folder, reveal latest file
-- **Readable errors**: more understandable UI error explanations for common failures
-- **Cross-platform launchers**: start scripts work on macOS and Linux
+- **CLI 包裝器**：可用 `./serena-tts` 直接從 shell 產生語音
+- **WebUI**：本機瀏覽器介面，預設 `http://127.0.0.1:7860`
+- **API 伺服器**：本機 HTTP API，預設 `http://127.0.0.1:7861`
+- **音檔格式**：支援 `.wav`、`.ogg`、`.mp3`
+- **語速控制**：`0.5x` 到 `1.5x`
+- **口氣控制**：透過自然語言 instruction 指定情緒 / 口氣
+- **口氣選項**：自然 / 溫柔 / 生氣 / 難過 / 開朗 / 嚴肅 / 播報 / 故事
+- **檔案操作輔助**：最新檔案路徑、輸出資料夾路徑、打開資料夾、選取最新檔案
+- **較清楚的錯誤訊息**：WebUI 會把常見錯誤翻成比較容易理解的說明
+- **跨平台啟動腳本**：`start-webui` / `start-api` 可在 macOS、Linux 使用
 
-## Tested Environment
+## 已測試環境
 
-- macOS (Apple Silicon)
-- Linux-compatible launch flow prepared
+- macOS（Apple Silicon）
+- Linux 相容啟動流程已整理完成
 - Python 3.11
 - `qwen-tts`
-- model: `Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`
-- runtime: CPU
+- 模型：`Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`
+- 推理模式：CPU
 
-## Project Structure
+## 專案結構
 
 ```text
 qwen3-tts/
@@ -43,22 +43,23 @@ qwen3-tts/
 ├── README.md
 ├── README.local.md
 ├── INSTALL-QWEN3-TTS.md
-├── serena_tts.py        # Python synthesis wrapper
-├── serena-tts           # shell wrapper
-├── tts_service.py       # shared generation/export logic
-├── webui.py             # local Gradio WebUI
-├── api_server.py        # local FastAPI server
-├── start-webui          # start WebUI
-├── start-api            # start API server
-├── call-tts-api         # call API from shell
+├── requirements.txt
+├── serena_tts.py        # Python 語音合成包裝
+├── serena-tts           # shell 指令包裝
+├── tts_service.py       # 共用的生成 / 轉檔 / 路徑邏輯
+├── webui.py             # 本地 Gradio WebUI
+├── api_server.py        # 本地 FastAPI 伺服器
+├── start-webui          # 啟動 WebUI
+├── start-api            # 啟動 API 伺服器
+├── call-tts-api         # 從 shell 呼叫 API
 ├── smoke_test.py
 ├── compare_speakers.py
-└── out/                 # generated files (ignored)
+└── out/                 # 生成的音檔（已忽略）
 ```
 
-## Installation
+## 安裝方式
 
-### Python environment
+### 1. 建立 Python 虛擬環境
 
 ```bash
 cd qwen3-tts
@@ -67,13 +68,21 @@ source .venv/bin/activate
 python -m pip install -U pip setuptools wheel
 ```
 
-### Python packages
+### 2. 安裝 Python 套件
+
+用 `requirements.txt`：
+
+```bash
+pip install -r requirements.txt
+```
+
+或手動安裝：
 
 ```bash
 python -m pip install qwen-tts fastapi uvicorn gradio opencc-python-reimplemented soundfile
 ```
 
-## System dependencies
+## 系統依賴
 
 ### macOS
 
@@ -88,66 +97,66 @@ sudo apt update
 sudo apt install -y python3 python3-venv ffmpeg sox
 ```
 
-If your distro uses a different package name for Python 3.11, install the matching version available on your system.
+如果你的系統不是 Python 3.11，也可以依你的環境改成對應版本。
 
-## Usage
+## 使用方式
 
-### CLI: generate speech
+### CLI：直接產生語音
 
 ```bash
 cd qwen3-tts
 ./serena-tts '你好，這是一段測試。'
 ```
 
-### Start WebUI
+### 啟動 WebUI
 
 ```bash
 cd qwen3-tts
 ./start-webui
 ```
 
-Then open:
+然後打開：
 
 ```text
 http://127.0.0.1:7860
 ```
 
-### Start API server
+### 啟動 API 伺服器
 
 ```bash
 cd qwen3-tts
 ./start-api
 ```
 
-Health check:
+健康檢查：
 
 ```bash
 curl http://127.0.0.1:7861/health
 ```
 
-### Call API from shell
+### 從 shell 呼叫 API
 
 ```bash
 cd qwen3-tts
 ./call-tts-api '你好，這是 API 測試。'
 ```
 
-## WebUI Usage
+## WebUI 說明
 
-The WebUI supports:
+WebUI 目前支援：
 
-- **文字**: text to speak
-- **Speaker**: current built-in tested speakers
-- **Language**: synthesis language
-- **語調 / 風格預設**: generation parameter preset
-- **口氣選項**: preset tone selector
-- **口氣說明（中文）**: free-form Chinese tone instruction
-- **語速**: playback speed adjustment
-- **輸出資訊 / 錯誤訊息**: result info or readable failure reason
+- **文字**：要朗讀的內容
+- **Speaker**：目前測過的 speaker
+- **Language**：合成語言
+- **語調 / 風格預設**：生成參數預設
+- **口氣選項**：快速選擇口氣風格
+- **口氣說明（中文）**：自訂中文口氣 instruction
+- **語速**：播放速度調整
+- **輸出資訊 / 錯誤訊息**：結果資訊或較清楚的失敗原因
 
-### Tone Presets
+### 口氣選項
 
-Available tone presets:
+目前提供：
 
 - 自訂
 - 自然
@@ -159,16 +168,16 @@ Available tone presets:
 - 播報
 - 故事
 
-Selecting a tone preset auto-fills the Chinese tone instruction field, and you can still edit it manually.
+選擇口氣選項後，會自動把對應中文 instruction 帶入「口氣說明（中文）」欄位；你也可以再手動修改。
 
-### Example tone instructions
+### 中文口氣說明範例
 
 - `請用溫柔、平靜、柔和的口氣來讀。`
 - `請用生氣、不耐煩、帶有情緒的口氣來讀。`
 - `請用像新聞播報一樣清楚、穩定的口氣來讀。`
 - `請用像說故事一樣有畫面感、帶節奏的口氣來讀。`
 
-## API Usage
+## API 說明
 
 ### `GET /health`
 
@@ -178,15 +187,15 @@ Selecting a tone preset auto-fills the Chinese tone instruction field, and you c
 
 ### `GET /meta`
 
-Returns supported speakers, languages, and presets.
+回傳支援的 speakers、languages、presets。
 
 ### `GET /latest`
 
-Returns latest generated files.
+回傳最近生成的檔案列表。
 
 ### `POST /synthesize`
 
-Example request:
+請求範例：
 
 ```json
 {
@@ -203,32 +212,31 @@ Example request:
 }
 ```
 
-## Linux Notes
+## Linux 說明
 
-This project no longer depends on:
+這個版本已經去掉以下平台綁定：
 
-- hardcoded Homebrew-only `ffmpeg` paths
-- macOS-only `open` commands in core logic
-- absolute macOS-only startup paths
+- 寫死的 Homebrew `ffmpeg` 路徑
+- 核心邏輯裡只能用 macOS `open`
+- 寫死的 macOS 絕對啟動路徑
 
-Behavior now is:
+目前行為：
 
-- `ffmpeg` is resolved from `PATH` (or `QWEN_TTS_FFMPEG` if set)
-- folder/file opening uses:
-  - `open` on macOS
-  - `xdg-open` on Linux when available
-- startup scripts resolve their own directory dynamically
+- `ffmpeg` 會從 `PATH` 自動尋找
+- 也可以用 `QWEN_TTS_FFMPEG` 手動指定
+- 開資料夾 / 選檔案時：
+  - macOS 用 `open`
+  - Linux 用 `xdg-open`
+- 如果 Linux 沒有 GUI opener，也不影響主要 TTS 功能，只是不能自動打開資料夾
 
-If no GUI opener exists on Linux, the project still works; the UI will return paths even if the system cannot auto-open folders.
+## 注意事項
 
-## Notes
+- 這個專案使用的是 **instruction-based tone control**，不是結構化的 `emotion=` API
+- 繁體中文輸入可先自動轉成簡體中文，以提高 Qwen3-TTS 辨識與發音穩定度
+- 生成音檔預設不加入 git
+- `.venv`、`out/`、`speaker-tests/` 等本地產物都應忽略
 
-- This project uses **instruction-based tone control**, not a strict structured `emotion=` API.
-- Traditional Chinese input can be auto-converted to Simplified Chinese before synthesis for better recognition.
-- Generated audio files are intentionally excluded from git.
-- `.venv`, `out/`, `speaker-tests/`, and other local artifacts should not be committed.
-
-## Common Local Commands
+## 常用指令
 
 ```bash
 source .venv/bin/activate
@@ -238,6 +246,6 @@ python compare_speakers.py
 ./start-api
 ```
 
-## License
+## 授權提醒
 
-Check the upstream `qwen-tts` and model licenses before redistributing or deploying beyond personal/local use.
+如果你要把這個專案做公開散佈或部署，請另外確認上游 `qwen-tts` 與模型本身的授權條款。
