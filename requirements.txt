@@ -5,3 +5,5 @@ gradio
 opencc-python-reimplemented
 soundfile
 torch
+torchaudio
+transformers

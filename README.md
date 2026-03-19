@@ -1,6 +1,6 @@
 # Qwen3-TTS 本地工具包
 
-這是一個可在 **macOS 與 Linux** 使用的 Qwen3-TTS 本地工具包，提供：
+這是一個可在 **macOS、Linux、Linux + NVIDIA GPU** 使用的 Qwen3-TTS 本地工具包，提供：
 
 - CLI 指令產生語音
 - 本機 WebUI
@@ -10,8 +10,9 @@
 - 繁體中文自動轉簡體中文後再合成
 - 中文口氣說明欄位
 - WebUI 口氣選項下拉選單
+- CPU / CUDA 可配置
 
-這個專案主要設計給本地個人使用，以及 CPU 環境下的 Qwen3-TTS 測試與包裝。
+這個專案主要設計給本地個人使用，以及 Qwen3-TTS 的本地測試與包裝。
 
 ## 功能特色
 
@@ -25,15 +26,16 @@
 - **檔案操作輔助**：最新檔案路徑、輸出資料夾路徑、打開資料夾、選取最新檔案
 - **較清楚的錯誤訊息**：WebUI 會把常見錯誤翻成比較容易理解的說明
 - **跨平台啟動腳本**：`start-webui` / `start-api` 可在 macOS、Linux 使用
+- **NVIDIA GPU 支援**：可透過環境變數指定 `cuda:0`、`float16`、`flash_attention_2`
 
-## 已測試環境
+## 已測試 / 設計目標
 
 - macOS（Apple Silicon）
 - Linux 相容啟動流程已整理完成
+- Linux + NVIDIA GPU 可配置模式已加入
 - Python 3.11
 - `qwen-tts`
 - 模型：`Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`
-- 推理模式：CPU
 
 ## 專案結構
 
@@ -70,16 +72,8 @@ python -m pip install -U pip setuptools wheel
 
 ### 2. 安裝 Python 套件
 
-用 `requirements.txt`：
-
 ```bash
 pip install -r requirements.txt
-```
-
-或手動安裝：
-
-```bash
-python -m pip install qwen-tts fastapi uvicorn gradio opencc-python-reimplemented soundfile
 ```
 
 ## 系統依賴
@@ -90,14 +84,22 @@ python -m pip install qwen-tts fastapi uvicorn gradio opencc-python-reimplemente
 brew install ffmpeg sox
 ```
 
-### Ubuntu / Debian
+### Ubuntu / Debian（CPU）
 
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv ffmpeg sox
 ```
 
-如果你的系統不是 Python 3.11，也可以依你的環境改成對應版本。
+### Ubuntu / Debian（NVIDIA）
+
+除了上面的系統依賴外，還需要：
+
+- NVIDIA Driver
+- CUDA 可用環境
+- 與你 CUDA 版本相容的 PyTorch
+
+如果你使用 NVIDIA，通常建議先依 PyTorch 官方文件安裝對應 CUDA 版本的 `torch` / `torchaudio`。
 
 ## 使用方式
 
@@ -141,6 +143,56 @@ cd qwen3-tts
 ./call-tts-api '你好，這是 API 測試。'
 ```
 
+## 裝置 / dtype / NVIDIA 設定
+
+這個版本支援用環境變數控制推理裝置：
+
+### 可用環境變數
+
+- `QWEN_TTS_DEVICE`
+  - `auto`
+  - `cpu`
+  - `cuda:0`
+- `QWEN_TTS_DTYPE`
+  - `auto`
+  - `float32`
+  - `float16`
+  - `bfloat16`
+- `QWEN_TTS_FLASH_ATTN`
+  - `auto`
+  - `on`
+  - `off`
+
+### 預設行為
+
+- `QWEN_TTS_DEVICE=auto`
+  - 有 CUDA 時優先用 `cuda:0`
+  - 否則 fallback 到 `cpu`
+- `QWEN_TTS_DTYPE=auto`
+  - CUDA：預設 `float16`
+  - CPU：預設 `float32`
+- `QWEN_TTS_FLASH_ATTN=auto`
+  - CUDA：預設嘗試 `flash_attention_2`
+  - CPU：不使用
+
+### Linux + NVIDIA 範例
+
+```bash
+export QWEN_TTS_DEVICE=cuda:0
+export QWEN_TTS_DTYPE=float16
+export QWEN_TTS_FLASH_ATTN=auto
+./start-webui
+```
+
+如果你想保守一點，也可以：
+
+```bash
+export QWEN_TTS_DEVICE=cuda:0
+export QWEN_TTS_DTYPE=float16
+export QWEN_TTS_FLASH_ATTN=off
+./start-webui
+```
+
 ## WebUI 說明
 
 WebUI 目前支援：
@@ -169,13 +221,6 @@ WebUI 目前支援：
 - 故事
 
 選擇口氣選項後，會自動把對應中文 instruction 帶入「口氣說明（中文）」欄位；你也可以再手動修改。
-
-### 中文口氣說明範例
-
-- `請用溫柔、平靜、柔和的口氣來讀。`
-- `請用生氣、不耐煩、帶有情緒的口氣來讀。`
-- `請用像新聞播報一樣清楚、穩定的口氣來讀。`
-- `請用像說故事一樣有畫面感、帶節奏的口氣來讀。`
 
 ## API 說明
 
@@ -212,13 +257,14 @@ WebUI 目前支援：
 }
 ```
 
-## Linux 說明
+## Linux / 跨平台說明
 
 這個版本已經去掉以下平台綁定：
 
 - 寫死的 Homebrew `ffmpeg` 路徑
 - 核心邏輯裡只能用 macOS `open`
 - 寫死的 macOS 絕對啟動路徑
+- 寫死只能用 CPU 的模型載入方式
 
 目前行為：
 
@@ -235,6 +281,7 @@ WebUI 目前支援：
 - 繁體中文輸入可先自動轉成簡體中文，以提高 Qwen3-TTS 辨識與發音穩定度
 - 生成音檔預設不加入 git
 - `.venv`、`out/`、`speaker-tests/` 等本地產物都應忽略
+- NVIDIA 模式要先有正確的 PyTorch + CUDA 安裝，不是只設環境變數就一定能跑
 
 ## 常用指令
 

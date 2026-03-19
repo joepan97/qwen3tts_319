@@ -13,20 +13,68 @@ MODEL_ID = os.environ.get('QWEN_TTS_MODEL', 'Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoic
 DEFAULT_SPEAKER = os.environ.get('QWEN_TTS_SPEAKER', 'serena')
 DEFAULT_LANGUAGE = os.environ.get('QWEN_TTS_LANGUAGE', 'Chinese')
 DEFAULT_MAX_NEW_TOKENS = int(os.environ.get('QWEN_TTS_MAX_NEW_TOKENS', '700'))
+DEFAULT_DEVICE = os.environ.get('QWEN_TTS_DEVICE', 'auto')
+DEFAULT_DTYPE = os.environ.get('QWEN_TTS_DTYPE', 'auto')
+DEFAULT_FLASH_ATTN = os.environ.get('QWEN_TTS_FLASH_ATTN', 'auto')
 
 _MODEL = None
+
+
+def resolve_device() -> str:
+    if DEFAULT_DEVICE != 'auto':
+        return DEFAULT_DEVICE
+    if torch.cuda.is_available():
+        return 'cuda:0'
+    return 'cpu'
+
+
+def resolve_dtype(device: str):
+    if DEFAULT_DTYPE != 'auto':
+        mapping = {
+            'float32': torch.float32,
+            'fp32': torch.float32,
+            'float16': torch.float16,
+            'fp16': torch.float16,
+            'bfloat16': torch.bfloat16,
+            'bf16': torch.bfloat16,
+        }
+        if DEFAULT_DTYPE.lower() not in mapping:
+            raise ValueError(f'Unsupported QWEN_TTS_DTYPE: {DEFAULT_DTYPE}')
+        return mapping[DEFAULT_DTYPE.lower()]
+    if str(device).startswith('cuda'):
+        return torch.float16
+    return torch.float32
+
+
+def resolve_attn_impl(device: str):
+    if DEFAULT_FLASH_ATTN == 'off':
+        return None
+    if DEFAULT_FLASH_ATTN == 'on':
+        return 'flash_attention_2'
+    if str(device).startswith('cuda'):
+        return 'flash_attention_2'
+    return None
 
 
 def get_model():
     global _MODEL
     if _MODEL is None:
         t0 = time.time()
-        _MODEL = Qwen3TTSModel.from_pretrained(
-            MODEL_ID,
-            device_map='cpu',
-            dtype=torch.float32,
+        device = resolve_device()
+        dtype = resolve_dtype(device)
+        attn_impl = resolve_attn_impl(device)
+        kwargs = {
+            'device_map': device,
+            'dtype': dtype,
+        }
+        if attn_impl:
+            kwargs['attn_implementation'] = attn_impl
+        _MODEL = Qwen3TTSModel.from_pretrained(MODEL_ID, **kwargs)
+        print(
+            f'[serena-tts] model loaded in {time.time()-t0:.2f}s '
+            f'(device={device}, dtype={dtype}, attn={attn_impl or "default"})',
+            file=sys.stderr,
         )
-        print(f'[serena-tts] model loaded in {time.time()-t0:.2f}s', file=sys.stderr)
     return _MODEL
 
 
