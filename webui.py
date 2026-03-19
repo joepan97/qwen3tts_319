@@ -218,7 +218,3 @@ if __name__ == "__main__":
         inbrowser=False,
         allowed_paths=[str((Path(__file__).resolve().parent / "out").resolve())],
     )
-
-    )
-/ "out").resolve())],
-    )
