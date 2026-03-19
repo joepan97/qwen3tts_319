@@ -46,7 +46,11 @@ qwen3-tts/
 ├── README.local.md
 ├── INSTALL-QWEN3-TTS.md
 ├── requirements.txt
+├── requirements-cuda.txt
 ├── serena_tts.py        # Python 語音合成包裝
+├── diagnose-env.py      # 檢查 torch / CUDA / ffmpeg / sox 狀態
+├── install-ubuntu-nvidia.sh
+├── Dockerfile.cuda
 ├── serena-tts           # shell 指令包裝
 ├── tts_service.py       # 共用的生成 / 轉檔 / 路徑邏輯
 ├── webui.py             # 本地 Gradio WebUI
@@ -100,6 +104,15 @@ sudo apt install -y python3 python3-venv ffmpeg sox
 - 與你 CUDA 版本相容的 PyTorch
 
 如果你使用 NVIDIA，通常建議先依 PyTorch 官方文件安裝對應 CUDA 版本的 `torch` / `torchaudio`。
+
+也可以先用專案內附腳本協助準備環境：
+
+```bash
+chmod +x install-ubuntu-nvidia.sh
+./install-ubuntu-nvidia.sh
+```
+
+> 注意：腳本裡仍保留了 PyTorch CUDA 安裝提示，實際使用時請依你的 CUDA 版本替換成官方建議指令。
 
 ## 使用方式
 
@@ -192,6 +205,23 @@ export QWEN_TTS_DTYPE=float16
 export QWEN_TTS_FLASH_ATTN=off
 ./start-webui
 ```
+
+### 環境診斷
+
+你可以用這個腳本檢查目前環境是否真的看得到 CUDA：
+
+```bash
+python diagnose-env.py
+```
+
+它會輸出：
+- Python 版本
+- torch 版本
+- `torch.cuda.is_available()`
+- GPU 張數
+- GPU 名稱
+- ffmpeg / sox 是否存在
+- 目前相關環境變數
 
 ## WebUI 說明
 
@@ -289,9 +319,28 @@ WebUI 目前支援：
 source .venv/bin/activate
 python smoke_test.py
 python compare_speakers.py
+python diagnose-env.py
 ./start-webui
 ./start-api
 ```
+
+## Docker（CUDA 範例）
+
+專案內有一份 `Dockerfile.cuda` 可作為 Linux + NVIDIA 的起點。
+
+建置：
+
+```bash
+docker build -f Dockerfile.cuda -t qwen3tts-cuda .
+```
+
+執行（需搭配 NVIDIA Container Toolkit）：
+
+```bash
+docker run --rm --gpus all -p 7860:7860 -p 7861:7861 qwen3tts-cuda
+```
+
+> 注意：`Dockerfile.cuda` 內的 torch 安裝行是示例，實際仍應依你的 CUDA / 驅動版本調整。
 
 ## 授權提醒
 

@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# 請依你的 CUDA 版本改成對應的 PyTorch 官方 index-url。
+# 下面這行只是示例：
+# --index-url https://download.pytorch.org/whl/cu124
+# torch
+# torchaudio
