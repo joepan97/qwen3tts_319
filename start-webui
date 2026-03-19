@@ -1,0 +1,9 @@
+#!/bin/zsh
+set -euo pipefail
+
+BASE_DIR="/Users/joepan/.openclaw/workspace/qwen3-tts"
+cd "$BASE_DIR"
+source .venv/bin/activate
+export PATH="/opt/homebrew/bin:$PATH"
+
+exec python3 webui.py
